@@ -9,7 +9,6 @@ class ProductManager {
 
     async generateIndex(ProductsList) {
         try {
-            console.log('primero')
             if (ProductsList.length === 0) return 1
             return ProductsList[ProductsList.length - 1].id + 1
         } catch (error) {
@@ -20,9 +19,6 @@ class ProductManager {
     async addProduct(product) {
 
         try {
-
-            console.log('segundo')
-
             const {
                 title,
                 description,
@@ -59,8 +55,6 @@ class ProductManager {
 
     async getProducts() {
         try {
-            console.log('tercero')
-
             const getProductsFromDB = await fs.readFile(this.path, 'utf-8')
             console.log(JSON.parse(getProductsFromDB))
             return JSON.parse(getProductsFromDB)
@@ -76,6 +70,7 @@ class ProductManager {
             const checkId = readDB.products.find((x)=> x.id === id)
             if (checkId){
                 console.log(checkId)
+                return checkId
             } else {
                 console.log('Not Found')
             }
@@ -101,8 +96,7 @@ class ProductManager {
     async deleteProduct(id){
         try {
             const allProd = await this.getProducts()
-            console.log(allProd.products)
-            let filtered = allProd.products.filter((p)=>{p.id != id})
+            let filtered = allProd.products.filter((p)=> p.id != id)
             await fs.writeFile(this.path, JSON.stringify(filtered))
         } catch (error) {
             console.log(error)
