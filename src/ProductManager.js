@@ -1,109 +1,81 @@
-const fs = require('fs/promises');
-const path = require('path');
+const fs = require("fs");
 
 class ProductManager {
-    static description = 'Gestion de productos'
-    constructor(path) {
-        this.path = path
+  constructor(path) {
+    this.path = path;
+    this.products = [];
+  }
+
+  async getProducts() {
+    try {
+      const productsDb = await fs.promises.readFile(this.path, "utf-8");
+      return JSON.parse(productsDb);
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    async generateIndex(ProductsList) {
-        try {
-            if (ProductsList.length === 0) return 1
-            return ProductsList[ProductsList.length - 1].id + 1
-        } catch (error) {
-            console.log(error)
-        }
+  async getProductsById(id) {
+    try {
+      const productsDb = await this.getProducts();
+      const productFound = productsDb.products.find((produt) => produt.id === id);
+      console.error(productFound);
+
+      return productFound ? productFound : console.log("Product not found");
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    async addProduct(product) {
+  async createProduct(product) {
+    try {
+      const productsDb = await this.getProducts();
+      const id = await this.generateNewId(productsDb.products);
+      productsDb.products.push({ id, ...product });
 
-        try {
-            const {
-                title,
-                description,
-                price,
-                thumbnail,
-                code,
-                stock,
-            } = product
-
-
-            const productsDB = await this.getProducts()
-
-            const newId = await this.generateIndex(productsDB.products)
-
-            const newProdToAdd = {
-                id: newId,
-                title,
-                description,
-                price,
-                thumbnail,
-                code,
-                stock,
-            }
-
-            productsDB.products.push(newProdToAdd)
-
-            await fs.writeFile(this.path, JSON.stringify(productsDB))
-            return newProdToAdd
-
-        } catch (error) {
-            console.log(error)
-        }
+      await fs.writeFile(this.path, JSON.stringify(productsDb.products),(err)=>console.log(err));
+      return "Product added succesfully";
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    async getProducts() {
-        try {
-            const getProductsFromDB = await fs.readFile(this.path, 'utf-8')
-            console.log(JSON.parse(getProductsFromDB))
-            return JSON.parse(getProductsFromDB)
-        } catch (error) {
-            console.log(error)
-        }
+  async updateProduct(id, data) {
+    try {
+      const productsDb = await this.getProducts();
+      const productId = await this.generateNewId(id);
+
+      let index = productsDb.findIndex((product) => product.id === id)
+      productsDb[index] = { ...productId, ...data };
+
+      await fs.writeFile(this.path, JSON.stringify(productsDb),(err)=>console.log(err));
+      console.log(productsDb);
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    async getProductsById(id){
-        try {
-            const readDB = await this.getProducts()
-
-            const checkId = readDB.products.find((x)=> x.id === id)
-            if (checkId){
-                console.log(checkId)
-                return checkId
-            } else {
-                console.log('Not Found')
-            }
-        } catch (error) {
-            console.log(error)
-        }
+  async deleteProduct(id) {
+    try {
+      const productsArray = await this.getProducts();
+      const productsFiltered = productsArray.filter(
+        (product) => product.id !== id
+      );
+      console.log(productsFiltered);
+      return "Product removed succesfully";
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    async updateProduct(id, data){
-        try {
-            let prodDB = await this.getProducts();
-			let prodToUpd = prodDB.products.find(prod => prod.id === id);
-			if (!prodToUpd) return 'Product not found';
-			let prodIndex = prodDB.products.findIndex(prod => prod.id === id);
-			prodDB.products[prodIndex] = { ...prodToUpd, ...data };
-			await fs.writeFile(this.path, JSON.stringify(prodDB));
-          } catch (error) {
-            console.log(error);
-          }
-
-    }
-
-    async deleteProduct(id){
-        try {
-            const allProd = await this.getProducts()
-            let filtered = allProd.products.filter((p)=> p.id != id)
-            await fs.writeFile(this.path, JSON.stringify(filtered))
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
+  async generateNewId(products) {
+    try {
+      if (products.length === 1) {
+        return 1;
+      }
+      return products[products.length - 1].id + 1;
+    } catch (error) {}
+  }
 }
-
 
 module.exports = ProductManager;
