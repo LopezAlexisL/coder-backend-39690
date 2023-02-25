@@ -1,75 +1,37 @@
-const ProductManager = require('../ProductManager');
-const productManager = new ProductManager('./src/db/productDB.json')
-
 const router = require('express').Router();
+const ProductManager = require('../productManager');
 
+const productManager = new ProductManager('src/db/products.json');
 
-router.get("/", async (req, res) => {
-    const limit = Number(req.query.limit);
-    const getProd = await productManager.getProducts();
-
-    if (!limit) {
-        return res.status(200).json(getProd)
-    } else {
-        return res.status(200).json(getProd.slice(0, limit))
-    }
-})
-
-router.get("/:pid", async (req, res) => {
-    const prodId = Number(req.params.pid);
-
-    if (isNaN(prodId)) {
-        return res.json({
-            message: `The id "${prodId}" entered is not a valid ID format. Please enter a number`,
-            queryParams: req.params
-        })
-    }
-
-    const getProdByID = await productManager.getProductsById(prodId)
-
-    if (!getProdByID) {
-        return res.status(404).json({
-            message: `Product with id "${prodId}" not found`,
-            queryParams: req.params
-        })
-    } else {
-        return res.status(200).json({
-            product: getProdByID,
-            queryParams: req.params
-        })
-    }
-})
-
-router.post("/", async (req, res) => {
-    const { title, description, price, category, code, stock, status } = req.body
-
-    if (!title || !description || !code || !price || !stock || !category || !status) {
-        return res.status(400).json({
-            message: "All fields are required!",
-        })
-    }
-
-    await productManager.createProduct(req.body);
-    res.status(200).json({
-        message: `Product ${title} added successfully`,
-    })
-})
-
-router.put("/:pid", async (req, res) => {
-    const id = Number(req.params.pid);
-    const dataId = req.body;
-    await productManager.updateProduct(id, dataId);
-    res.status(200).json({
-        message: `Product added successfully`,
-    });
+router.get('/', async (req, res) => {
+	const limit = Number(req.query.limit);
+	const products = await productManager.getProducts();
+	if (limit) return res.status(200).json(products.slice(0, limit));
+	res.status(200).render('home', { products });
 });
 
-router.delete("/:pid", async (req, res) => {
-    const id = Number(req.params.pid);
-    await productManager.deleteProduct(id)
-    res.status(200).json({
-        message: "Product deleted succesfully",
-    })
-})
+router.get('/:pid', async (req, res) => {
+	const product = await productManager.getProductById(req.params.pid);
+	if (!product) return res.status(404).json({ message: '[!] Product not found' });
+	res.status(200).json(product);
+});
+
+router.post('/', async (req, res) => {
+	const { title, description, code, price, stock, category } = req.body;
+	if (!title || !description || !code || !price || !stock || !category)
+		return res.status(400).json({ message: '[!] All fields are required' });
+	await productManager.addProduct(req.body);
+	res.status(200).json({ message: 'Product added successfully' });
+});
+
+router.put('/:pid', async (req, res) => {
+	await productManager.updateProduct(Number(req.params.pid), req.body);
+	res.status(200).json({ message: 'Product updated successfully' });
+});
+
+router.delete('/:pid', async (req, res) => {
+	await productManager.deleteProduct(req.params.pid);
+	res.status(200).json({ message: 'Product deleted successfully' });
+});
 
 module.exports = router;
